@@ -31,6 +31,7 @@
       "disablePlugins": [],
       "outputPath": ""
     },
+    "useCompilerPlugins": ["typescript"],
     "condition": false
   },
   "compileType": "miniprogram",
