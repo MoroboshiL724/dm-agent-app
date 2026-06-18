@@ -3,31 +3,40 @@
     <text class="title">{{gameType || '桌游助手'}}</text>
   </view>
 
-  <!-- 创建房间视图 -->
-  <view class="create-view" wx:if="{{mode === 'create'}}">
+  <!-- 创建房间视图 — 步骤1：输入昵称 -->
+  <view class="create-view" wx:if="{{mode === 'create' && !roomReady}}">
+    <view class="input-group">
+      <text class="label">你的昵称</text>
+      <input class="name-input" value="{{playerName}}" placeholder="输入昵称" bindinput="onInputPlayerName" maxlength="10" />
+    </view>
+    <button class="join-btn primary" bindtap="doCreateAndJoin" loading="{{joining}}">创建并加入</button>
+  </view>
+
+  <!-- 创建房间视图 — 步骤2：房间已创建，等待玩家 -->
+  <view class="create-view" wx:if="{{mode === 'create' && roomReady}}">
     <view class="room-code-section">
       <text class="label">房间号</text>
       <view class="room-code-box">
-        <text class="room-code">{{roomCode || '创建中...'}}</text>
+        <text class="room-code">{{roomCode}}</text>
       </view>
-      <button class="copy-btn" bindtap="onCopyRoomCode" wx:if="{{roomCode}}">复制邀请码</button>
+      <button class="copy-btn" bindtap="onCopyRoomCode">复制邀请码</button>
     </view>
 
     <view class="player-list">
       <text class="section-title">玩家 ({{players.length}})</text>
       <view class="player-item" wx:for="{{players}}" wx:key="player_id">
-        <text class="player-name">{{item.name}}</text>
+        <text class="player-name">{{item.name}}{{item.player_id === myPlayerId ? ' (你)' : ''}}</text>
         <text class="player-status {{item.is_connected ? 'online' : 'offline'}}">
           {{item.is_connected ? '已连接' : '离线'}}
         </text>
       </view>
-      <view class="waiting-hint" wx:if="{{players.length === 0}}">
-        <text>等待玩家加入...</text>
+      <view class="waiting-hint" wx:if="{{players.length < minPlayers}}">
+        <text>等待更多玩家加入...（{{players.length}}/{{minPlayers}}）</text>
       </view>
     </view>
 
     <button class="start-btn primary" bindtap="onStartGame" disabled="{{!canStart}}" wx:if="{{isHost}}">
-      {{canStart ? '开始游戏' : '至少需要 ' + minPlayers + ' 名玩家'}}
+      {{canStart ? '开始游戏' : '至少需要 ' + minPlayers + ' 名玩家（当前' + players.length + '人）'}}
     </button>
   </view>
 
@@ -39,8 +48,8 @@
     </view>
     <view class="input-group">
       <text class="label">你的昵称</text>
-      <input class="name-input" value="{{playerName}}" placeholder="输入昵称" bindinput="onInputPlayerName" maxlength="10" />
+      <input class="name-input" value="{{playerName}}" placeholder="输入昵称" bindinput="onInputName" maxlength="10" />
     </view>
-    <button class="join-btn primary" bindtap="doJoinGame">加入游戏</button>
+    <button class="join-btn primary" bindtap="doJoinGame" loading="{{joining}}">加入游戏</button>
   </view>
 </view>

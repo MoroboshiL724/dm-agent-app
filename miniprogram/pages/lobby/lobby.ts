@@ -9,7 +9,7 @@ Page({
   _pollTimer: 0 as number,
 
   data: {
-    mode: "create" as "create" | "join",  // 创建或加入
+    mode: "create" as "create" | "join",
     gameType: "",
     gameId: "",
     roomCode: "",
@@ -22,29 +22,26 @@ Page({
     minPlayers: 0,
     maxPlayers: 0,
     joining: false,
+    roomReady: false,  // 房间是否已创建/加入完成
   },
 
   onLoad(options: Record<string, string>) {
     const mode = options.mode || "";
     const gameType = options.game_type || "";
     const roomCode = options.room_code || "";
-    // 从首页传入的人数配置（作为初始默认值）
     const minPlayers = parseInt(options.min_players || "0", 10);
     const maxPlayers = parseInt(options.max_players || "0", 10);
 
     if (mode === "join") {
-      // 通过房间号加入
       this.setData({ mode: "join", roomCode });
     } else {
-      // 创建房间 — 先用首页传入的人数，后续轮询会覆盖
-      console.log(`[Lobby] 创建游戏: ${gameType}, min=${minPlayers}, max=${maxPlayers}`);
       this.setData({
         mode: "create",
         gameType,
         minPlayers: minPlayers || 4,
         maxPlayers: maxPlayers || 99,
+        roomReady: false,
       });
-      this.doCreateGame(gameType);
     }
   },
 
@@ -53,33 +50,58 @@ Page({
     gameWs.offAll();
   },
 
-  /* ═══════ 创建游戏 ═══════ */
+  /* ═══════ 创建并加入 ═══════ */
 
-  async doCreateGame(gameType: string) {
+  onInputPlayerName(e: WechatMiniprogram.Input) {
+    this.setData({ playerName: e.detail.value });
+  },
+
+  async doCreateAndJoin() {
+    const { gameType, playerName } = this.data;
+    if (!playerName.trim()) {
+      wx.showToast({ title: "请输入你的昵称", icon: "none" });
+      return;
+    }
+    if (this.data.joining) return;
+    this.setData({ joining: true });
+
     try {
+      // 1. 创建房间
       wx.showLoading({ title: "创建房间..." });
-      const res = await createGame(gameType);
+      const { game_id, room_code } = await createGame(gameType);
       wx.hideLoading();
-      this.setData({ gameId: res.game_id, roomCode: res.room_code, isHost: true });
-      this.startPolling();
+
+      // 2. 房主自己加入
+      wx.showLoading({ title: "加入中..." });
+      const { player_id, ws_token } = await joinGame(game_id, playerName.trim());
+      wx.hideLoading();
+
+      this.setData({
+        gameId: game_id,
+        roomCode: room_code,
+        myPlayerId: player_id,
+        wsToken: ws_token,
+        isHost: true,
+        joining: false,
+        roomReady: true,
+      });
+
+      // 3. 连接 WebSocket
+      this.connectAndPoll();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: "创建失败", icon: "none" });
-      wx.navigateBack();
+      this.setData({ joining: false });
+      wx.showToast({ title: "创建失败，请重试", icon: "none" });
     }
   },
 
-  /* ═══════ 加入游戏 ═══════ */
+  /* ═══════ 加入房间（通过房间号） ═══════ */
 
   onInputRoomCode(e: WechatMiniprogram.Input) {
     this.setData({ roomCode: e.detail.value.toUpperCase() });
   },
 
   onInputName(e: WechatMiniprogram.Input) {
-    this.setData({ playerName: e.detail.value });
-  },
-
-  onInputPlayerName(e: WechatMiniprogram.Input) {
     this.setData({ playerName: e.detail.value });
   },
 
@@ -94,14 +116,11 @@ Page({
 
     try {
       wx.showLoading({ title: "查找房间..." });
-
-      // 1. 通过房间号查询 game_id
       const info = await fetchGameByRoom(roomCode);
       const gameId = info.game_id;
 
-      // 2. 加入游戏
       wx.showLoading({ title: "加入中..." });
-      const res = await joinGame(gameId, playerName);
+      const res = await joinGame(gameId, playerName.trim());
       wx.hideLoading();
 
       this.setData({
@@ -110,18 +129,42 @@ Page({
         wsToken: res.ws_token,
         gameType: info.game_type,
         joining: false,
+        roomReady: true,
+        minPlayers: info.min_players || this.data.minPlayers || 4,
+        maxPlayers: info.max_players || this.data.maxPlayers || 99,
       });
       this.goToGame();
     } catch (err) {
       wx.hideLoading();
       this.setData({ joining: false });
       const msg = (err as Error).message || "";
-      if (msg.includes("404") || msg.includes("Room not found")) {
+      if (msg.includes("404") || msg.includes("Room")) {
         wx.showToast({ title: "房间不存在", icon: "none" });
       } else {
         wx.showToast({ title: "加入失败，请重试", icon: "none" });
       }
     }
+  },
+
+  /* ═══════ 连接 WebSocket + 轮询 ═══════ */
+
+  connectAndPoll() {
+    const app = getApp<IAppOption>();
+    const wsUrl = `${app.globalData.serverUrl}/ws/game/${this.data.gameId}?player_id=${this.data.myPlayerId}&token=${this.data.wsToken}`;
+
+    gameWs.on("connected", () => {
+      gameWs.send("player_ready", {});
+    });
+
+    gameWs.on("public_state", (p) => {
+      const players = (p.players || []) as Array<{
+        player_id: string; name: string; is_alive: boolean; is_connected: boolean;
+      }>;
+      this.setData({ players });
+    });
+
+    gameWs.connect(wsUrl);
+    this.startPolling();
   },
 
   /* ═══════ 轮询房间状态 ═══════ */
@@ -130,7 +173,7 @@ Page({
     this._pollTimer = setInterval(() => {
       this.pollGameState();
     }, 2000) as unknown as number;
-    this.pollGameState(); // 立即执行一次
+    this.pollGameState();
   },
 
   async pollGameState() {
@@ -138,10 +181,8 @@ Page({
     try {
       const info = await fetchGameInfo(this.data.gameId);
       const playerCount = info.players.length;
-      // 优先用 API 返回值，没有就用当前值（已从首页传入）
       const min = info.min_players || this.data.minPlayers || 4;
       const max = info.max_players || this.data.maxPlayers || 99;
-      console.log(`[Lobby] 轮询: players=${playerCount}, min=${min}, max=${max}, api_min=${info.min_players}, cur_min=${this.data.minPlayers}`);
       this.setData({
         players: info.players,
         minPlayers: min,
@@ -149,7 +190,7 @@ Page({
         canStart: playerCount >= min && playerCount <= max,
       });
     } catch (err) {
-      // 房间可能已过期
+      // 房间过期
     }
   },
 
@@ -162,13 +203,7 @@ Page({
   /* ═══════ 开始游戏 ═══════ */
 
   onStartGame() {
-    gameWs.on("connected", () => {
-      wx.navigateTo({
-        url: `/pages/game/game?game_id=${this.data.gameId}&player_id=${this.data.myPlayerId}&token=${this.data.wsToken}`,
-      });
-    });
-
-    // 先进入游戏页面，再通过 WS 接收开始信号
+    gameWs.send("start_game", {});
     this.goToGame();
   },
 
