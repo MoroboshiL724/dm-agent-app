@@ -37,6 +37,7 @@ Page({
       this.setData({ mode: "join", roomCode });
     } else {
       // 创建房间 — 先用首页传入的人数，后续轮询会覆盖
+      console.log(`[Lobby] 创建游戏: ${gameType}, min=${minPlayers}, max=${maxPlayers}`);
       this.setData({
         mode: "create",
         gameType,
@@ -140,6 +141,7 @@ Page({
       // 优先用 API 返回值，没有就用当前值（已从首页传入）
       const min = info.min_players || this.data.minPlayers || 4;
       const max = info.max_players || this.data.maxPlayers || 99;
+      console.log(`[Lobby] 轮询: players=${playerCount}, min=${min}, max=${max}, api_min=${info.min_players}, cur_min=${this.data.minPlayers}`);
       this.setData({
         players: info.players,
         minPlayers: min,
