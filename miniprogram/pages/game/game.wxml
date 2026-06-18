@@ -1,0 +1,102 @@
+<view class="container">
+  <!-- 连接状态遮罩 -->
+  <view class="connection-overlay" wx:if="{{!isConnected || isReconnecting}}">
+    <text class="connection-text">{{isReconnecting ? '重连中...' : '连接断开'}}</text>
+    <text class="connection-detail">{{connectionError}}</text>
+  </view>
+
+  <!-- 阶段指示器 -->
+  <view class="phase-bar">
+    <text class="phase-icon">{{phaseName === 'night_werewolf' || phaseName === 'night_seer' || phaseName === 'night_witch' ? '🌙' : '☀️'}}</text>
+    <text class="phase-name">{{phaseName}}</text>
+    <text class="round-info" wx:if="{{roundNumber > 0}}">第{{roundNumber}}轮</text>
+  </view>
+
+  <!-- 公告区 -->
+  <scroll-view class="announcement-area" scroll-y scroll-into-view="last-msg">
+    <view class="announcement-item" wx:for="{{announcements}}" wx:key="index" id="ann-{{index}}">
+      <text class="announcement-text">{{item}}</text>
+    </view>
+    <view id="last-msg"></view>
+  </scroll-view>
+
+  <!-- 玩家状态栏 -->
+  <view class="player-bar">
+    <view class="player-dot {{item.is_alive ? 'alive' : 'dead'}}" wx:for="{{players}}" wx:key="player_id">
+      <text class="player-name">{{item.name}}</text>
+      <text class="player-status">{{item.is_alive ? '存活' : '出局'}}</text>
+    </view>
+  </view>
+
+  <!-- 身份指示 -->
+  <view class="role-indicator" bindtap="onToggleRoleCard">
+    <text class="role-hint">点击查看身份</text>
+    <view class="role-card {{showRoleCard ? 'show' : ''}}" wx:if="{{myRole}}">
+      <text class="role-name">{{myRole}}</text>
+      <text class="role-team {{myTeam}}">{{myTeam === 'good' ? '正义' : '邪恶'}}阵营</text>
+      <text class="role-teammates" wx:if="{{teammates.length > 0}}">
+        队友: {{teammates.join(', ')}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 快捷动作按钮 -->
+  <view class="quick-actions" wx:if="{{availableActions.length > 0}}">
+    <button
+      class="action-btn"
+      wx:for="{{availableActions}}"
+      wx:key="action_type"
+      data-action="{{item}}"
+      bindtap="onActionTap"
+    >{{item.label}}</button>
+  </view>
+
+  <!-- 投票面板（弹出） -->
+  <view class="vote-overlay" wx:if="{{showVotePanel}}">
+    <view class="vote-panel">
+      <text class="vote-title">选择目标</text>
+      <button
+        class="vote-target"
+        wx:for="{{voteTargets}}"
+        wx:key="*this"
+        data-target-id="{{item}}"
+        bindtap="onVoteTargetTap"
+      >{{item}}</button>
+      <button class="vote-cancel" bindtap="onCancelVote">取消</button>
+    </view>
+  </view>
+
+  <!-- 输入区 -->
+  <view class="input-area">
+    <!-- 语音模式 -->
+    <view class="voice-mode" wx:if="{{inputMode === 'voice'}}">
+      <button
+        class="voice-btn {{isRecording ? 'recording' : ''}}"
+        bindtouchstart="onVoiceButtonTouchStart"
+        bindtouchend="onVoiceButtonTouchEnd"
+      >{{isRecording ? '松开发送' : '按住说话'}}</button>
+    </view>
+
+    <!-- 文字模式 -->
+    <view class="manual-mode" wx:else>
+      <input
+        class="manual-input"
+        value="{{manualText}}"
+        placeholder="输入操作指令..."
+        bindinput="onManualInput"
+        confirm-type="send"
+        bindconfirm="onSendManual"
+      />
+      <button class="send-btn" bindtap="onSendManual">发送</button>
+    </view>
+
+    <view class="mode-toggle" bindtap="onToggleInputMode">
+      <text>{{inputMode === 'voice' ? '切换到文字输入' : '切换到语音输入'}}</text>
+    </view>
+  </view>
+
+  <!-- 退出按钮 -->
+  <view class="leave-btn" bindtap="onLeaveGame">
+    <text>退出游戏</text>
+  </view>
+</view>

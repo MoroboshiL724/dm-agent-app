@@ -1,0 +1,9 @@
+{
+  "name": "dm-agent-app",
+  "version": "0.1.0",
+  "description": "桌游助手微信小程序 — AI语音电子裁判",
+  "devDependencies": {
+    "miniprogram-api-typings": "^4.1.3",
+    "typescript": "^5.9.3"
+  }
+}

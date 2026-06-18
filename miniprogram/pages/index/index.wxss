@@ -1,0 +1,33 @@
+.container { padding: 40rpx; min-height: 100vh; background: var(--color-bg); }
+
+.header { text-align: center; margin: 80rpx 0 60rpx; }
+.title { font-size: 52rpx; font-weight: bold; display: block; }
+.subtitle { font-size: 28rpx; color: var(--color-text-dim); margin-top: 12rpx; display: block; }
+
+.game-card {
+  display: flex; align-items: center;
+  background: var(--color-surface); border-radius: 16rpx;
+  padding: 32rpx; margin-bottom: 20rpx;
+  transition: transform 0.15s;
+}
+.game-card:active { transform: scale(0.98); }
+.game-icon { font-size: 56rpx; margin-right: 24rpx; }
+.game-info { flex: 1; }
+.game-name { font-size: 34rpx; font-weight: bold; display: block; }
+.game-detail { font-size: 24rpx; color: var(--color-text-dim); }
+.arrow { font-size: 36rpx; color: var(--color-text-dim); }
+
+.loading { text-align: center; padding: 80rpx; color: var(--color-text-dim); }
+
+/* Join section */
+.join-section { margin-top: 60rpx; }
+.divider { text-align: center; margin: 20rpx 0; }
+.divider text { color: var(--color-text-dim); font-size: 24rpx; padding: 0 20rpx; }
+
+.join-input-row { display: flex; gap: 16rpx; margin-bottom: 16rpx; }
+.code-input {
+  flex: 1; padding: 20rpx; font-size: 32rpx; letter-spacing: 8rpx; text-align: center;
+  background: var(--color-surface); border-radius: 12rpx; color: #fff;
+}
+.join-btn { padding: 20rpx 32rpx; background: var(--color-primary); color: #fff; border-radius: 12rpx; }
+.toggle-join { background: transparent; color: var(--color-accent); font-size: 26rpx; }

@@ -1,0 +1,35 @@
+/** 全局样式 */
+
+page {
+  --color-bg: #0f0f23;
+  --color-surface: #1a1a2e;
+  --color-primary: #e94560;
+  --color-accent: #0f3460;
+  --color-text: #eee;
+  --color-text-dim: #8892b0;
+  --color-success: #2ecc71;
+  --color-warning: #f39c12;
+  --color-danger: #e74c3c;
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  min-height: 100vh;
+}
+
+button {
+  border: none;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 28rpx;
+}
+
+button.primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+button.secondary {
+  background-color: var(--color-accent);
+  color: #fff;
+}

@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="header">
+    <text class="title">{{gameType || '桌游助手'}}</text>
+  </view>
+
+  <!-- 创建房间视图 -->
+  <view class="create-view" wx:if="{{mode === 'create'}}">
+    <view class="room-code-section">
+      <text class="label">房间号</text>
+      <view class="room-code-box">
+        <text class="room-code">{{roomCode || '创建中...'}}</text>
+      </view>
+      <button class="copy-btn" bindtap="onCopyRoomCode" wx:if="{{roomCode}}">复制邀请码</button>
+    </view>
+
+    <view class="player-list">
+      <text class="section-title">玩家 ({{players.length}})</text>
+      <view class="player-item" wx:for="{{players}}" wx:key="player_id">
+        <text class="player-name">{{item.name}}</text>
+        <text class="player-status {{item.is_connected ? 'online' : 'offline'}}">
+          {{item.is_connected ? '已连接' : '离线'}}
+        </text>
+      </view>
+      <view class="waiting-hint" wx:if="{{players.length === 0}}">
+        <text>等待玩家加入...</text>
+      </view>
+    </view>
+
+    <button class="start-btn primary" bindtap="onStartGame" disabled="{{!canStart}}" wx:if="{{isHost}}">
+      {{canStart ? '开始游戏' : '等待至少4名玩家'}}
+    </button>
+  </view>
+
+  <!-- 加入房间视图 -->
+  <view class="join-view" wx:if="{{mode === 'join'}}">
+    <view class="input-group">
+      <text class="label">房间号</text>
+      <input class="room-input" value="{{roomCode}}" placeholder="输入4位房间号" bindinput="onInputRoomCode" maxlength="4" />
+    </view>
+    <view class="input-group">
+      <text class="label">你的昵称</text>
+      <input class="name-input" value="{{playerName}}" placeholder="输入昵称" bindinput="onInputPlayerName" maxlength="10" />
+    </view>
+    <button class="join-btn primary" bindtap="doJoinGame">加入游戏</button>
+  </view>
+</view>

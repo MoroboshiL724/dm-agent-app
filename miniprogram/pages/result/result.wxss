@@ -1,0 +1,59 @@
+.container {
+  padding: 40rpx;
+  min-height: 100vh;
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.trophy { font-size: 100rpx; display: block; }
+.winner-text { font-size: 48rpx; font-weight: bold; color: var(--color-primary); display: block; margin: 20rpx 0; }
+.summary { font-size: 28rpx; color: var(--color-text-dim); line-height: 1.5; }
+
+.role-reveal {
+  margin: 40rpx 0;
+  text-align: left;
+}
+.section-title {
+  font-size: 26rpx;
+  color: var(--color-text-dim);
+  margin-bottom: 16rpx;
+  display: block;
+  text-align: center;
+}
+
+.player-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18rpx 24rpx;
+  background: var(--color-surface);
+  border-radius: 8rpx;
+  margin-bottom: 8rpx;
+}
+.player-name { font-size: 28rpx; }
+.role-tag {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+.role-tag.good { background: rgba(46,204,113,0.2); color: var(--color-success); }
+.role-tag.evil { background: rgba(231,76,60,0.2); color: var(--color-danger); }
+
+.actions { margin-top: 60rpx; }
+.play-again {
+  width: 100%;
+  padding: 24rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+.share-btn {
+  width: 100%;
+  padding: 24rpx;
+  font-size: 28rpx;
+  background: transparent;
+  color: var(--color-accent);
+  border: 1rpx solid var(--color-accent);
+  border-radius: 16rpx;
+}

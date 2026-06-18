@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="result-header">
+    <text class="trophy">🏆</text>
+    <text class="winner-text">{{winner}}</text>
+    <text class="summary">{{summary}}</text>
+  </view>
+
+  <view class="role-reveal">
+    <text class="section-title">身份揭晓</text>
+    <view class="player-row" wx:for="{{players}}" wx:key="name">
+      <text class="player-name">{{item.name}}</text>
+      <text class="role-tag {{item.team}}">{{item.role}}</text>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="primary play-again" bindtap="onPlayAgain">再来一局</button>
+    <button class="share-btn" open-type="share">分享给朋友</button>
+  </view>
+</view>
