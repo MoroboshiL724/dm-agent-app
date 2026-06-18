@@ -44,10 +44,14 @@ Page({
     showRoleCard: false,
   },
 
+  _shouldStart: false,
+
   onLoad(options: Record<string, string>) {
     const gameId = options.game_id || "";
     const playerId = options.player_id || "";
     const wsToken = options.token || "";
+    const action = options.action || "";
+    this._shouldStart = action === "start";
     this.setData({ gameId, playerId });
     this.connectGame(gameId, playerId, wsToken);
     this.setupASR();
@@ -67,7 +71,12 @@ Page({
     // 注册消息处理器
     gameWs.on("connected", () => {
       this.setData({ isConnected: true, isReconnecting: false, connectionError: "" });
-      gameWs.send("player_ready", {});
+      if (this._shouldStart) {
+        // 房主：发送开始游戏
+        gameWs.send("start_game", {});
+      } else {
+        gameWs.send("player_ready", {});
+      }
     });
 
     gameWs.on("phase_change", (p) => this.onPhaseChange(p));

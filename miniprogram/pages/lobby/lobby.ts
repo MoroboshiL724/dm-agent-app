@@ -1,9 +1,9 @@
 /**
  * 房间页面 — 创建/加入游戏，等待玩家就绪
+ * 注意：lobby 只负责 REST 轮询，WebSocket 由 game 页面统一管理
  */
 
 import { createGame, joinGame, fetchGameInfo, fetchGameByRoom } from "../../services/api";
-import { gameWs } from "../../services/websocket";
 
 Page({
   _pollTimer: 0 as number,
@@ -22,7 +22,7 @@ Page({
     minPlayers: 0,
     maxPlayers: 0,
     joining: false,
-    roomReady: false,  // 房间是否已创建/加入完成
+    roomReady: false,
   },
 
   onLoad(options: Record<string, string>) {
@@ -47,7 +47,6 @@ Page({
 
   onUnload() {
     this.stopPolling();
-    gameWs.offAll();
   },
 
   /* ═══════ 创建并加入 ═══════ */
@@ -86,8 +85,8 @@ Page({
         roomReady: true,
       });
 
-      // 3. 连接 WebSocket
-      this.connectAndPoll();
+      // 3. 开始轮询玩家列表
+      this.startPolling();
     } catch (err) {
       wx.hideLoading();
       this.setData({ joining: false });
@@ -128,11 +127,13 @@ Page({
         myPlayerId: res.player_id,
         wsToken: res.ws_token,
         gameType: info.game_type,
-        joining: false,
         roomReady: true,
         minPlayers: info.min_players || this.data.minPlayers || 4,
         maxPlayers: info.max_players || this.data.maxPlayers || 99,
+        joining: false,
       });
+
+      // 直接进入游戏页面（由 game 页面连 WS）
       this.goToGame();
     } catch (err) {
       wx.hideLoading();
@@ -146,34 +147,13 @@ Page({
     }
   },
 
-  /* ═══════ 连接 WebSocket + 轮询 ═══════ */
-
-  connectAndPoll() {
-    const app = getApp<IAppOption>();
-    const wsUrl = `${app.globalData.serverUrl}/ws/game/${this.data.gameId}?player_id=${this.data.myPlayerId}&token=${this.data.wsToken}`;
-
-    gameWs.on("connected", () => {
-      gameWs.send("player_ready", {});
-    });
-
-    gameWs.on("public_state", (p) => {
-      const players = (p.players || []) as Array<{
-        player_id: string; name: string; is_alive: boolean; is_connected: boolean;
-      }>;
-      this.setData({ players });
-    });
-
-    gameWs.connect(wsUrl);
-    this.startPolling();
-  },
-
   /* ═══════ 轮询房间状态 ═══════ */
 
   startPolling() {
+    this.pollGameState();
     this._pollTimer = setInterval(() => {
       this.pollGameState();
     }, 2000) as unknown as number;
-    this.pollGameState();
   },
 
   async pollGameState() {
@@ -197,14 +177,18 @@ Page({
   stopPolling() {
     if (this._pollTimer) {
       clearInterval(this._pollTimer);
+      this._pollTimer = 0;
     }
   },
 
   /* ═══════ 开始游戏 ═══════ */
 
   onStartGame() {
-    gameWs.send("start_game", {});
-    this.goToGame();
+    const { gameId, myPlayerId, wsToken } = this.data;
+    this.stopPolling();
+    wx.navigateTo({
+      url: `/pages/game/game?game_id=${gameId}&player_id=${myPlayerId}&token=${wsToken}&action=start`,
+    });
   },
 
   goToGame() {
