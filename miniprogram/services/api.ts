@@ -53,6 +53,8 @@ export function fetchGameInfo(gameId: string): Promise<{
   game_id: string; game_type: string; status: string;
   players: Array<{ player_id: string; name: string; is_alive: boolean; is_connected: boolean }>;
   room_code: string;
+  min_players: number;
+  max_players: number;
 }> {
   return apiGet(`/games/${gameId}`);
 }
@@ -69,6 +71,8 @@ export function fetchGameByRoom(roomCode: string): Promise<{
   game_id: string; game_type: string; status: string;
   players: Array<{ player_id: string; name: string; is_alive: boolean; is_connected: boolean }>;
   room_code: string;
+  min_players: number;
+  max_players: number;
 }> {
   return apiGet(`/games/by-room/${roomCode}`);
 }

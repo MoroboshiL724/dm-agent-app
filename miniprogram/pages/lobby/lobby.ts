@@ -128,9 +128,14 @@ Page({
     if (!this.data.gameId) return;
     try {
       const info = await fetchGameInfo(this.data.gameId);
+      const playerCount = info.players.length;
+      const min = info.min_players || 4;
+      const max = info.max_players || 99;
       this.setData({
         players: info.players,
-        canStart: info.players.length >= this.data.minPlayers,
+        minPlayers: min,
+        maxPlayers: max,
+        canStart: playerCount >= min && playerCount <= max,
       });
     } catch (err) {
       // 房间可能已过期
