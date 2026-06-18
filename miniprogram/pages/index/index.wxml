@@ -11,6 +11,8 @@
       wx:for="{{gameTypes}}"
       wx:key="game_id"
       data-game-id="{{item.game_id}}"
+      data-min-players="{{item.min_players}}"
+      data-max-players="{{item.max_players}}"
       bindtap="onGameSelect"
     >
       <text class="game-icon">{{item.icon || '🎲'}}</text>

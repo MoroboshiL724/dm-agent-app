@@ -28,13 +28,21 @@ Page({
     const mode = options.mode || "";
     const gameType = options.game_type || "";
     const roomCode = options.room_code || "";
+    // 从首页传入的人数配置（作为初始默认值）
+    const minPlayers = parseInt(options.min_players || "0", 10);
+    const maxPlayers = parseInt(options.max_players || "0", 10);
 
     if (mode === "join") {
       // 通过房间号加入
       this.setData({ mode: "join", roomCode });
     } else {
-      // 创建房间
-      this.setData({ mode: "create", gameType });
+      // 创建房间 — 先用首页传入的人数，后续轮询会覆盖
+      this.setData({
+        mode: "create",
+        gameType,
+        minPlayers: minPlayers || 4,
+        maxPlayers: maxPlayers || 99,
+      });
       this.doCreateGame(gameType);
     }
   },
@@ -129,8 +137,9 @@ Page({
     try {
       const info = await fetchGameInfo(this.data.gameId);
       const playerCount = info.players.length;
-      const min = info.min_players || 4;
-      const max = info.max_players || 99;
+      // 优先用 API 返回值，没有就用当前值（已从首页传入）
+      const min = info.min_players || this.data.minPlayers || 4;
+      const max = info.max_players || this.data.maxPlayers || 99;
       this.setData({
         players: info.players,
         minPlayers: min,

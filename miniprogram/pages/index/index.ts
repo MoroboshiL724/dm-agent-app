@@ -45,7 +45,9 @@ Page({
   /** 选择游戏 → 进入创建/加入页面 */
   onGameSelect(e: WechatMiniprogram.TouchEvent) {
     const gameId = e.currentTarget.dataset.gameId as string;
-    wx.navigateTo({ url: `/pages/lobby/lobby?game_type=${gameId}` });
+    const minP = e.currentTarget.dataset.minPlayers as string || "4";
+    const maxP = e.currentTarget.dataset.maxPlayers as string || "12";
+    wx.navigateTo({ url: `/pages/lobby/lobby?game_type=${gameId}&min_players=${minP}&max_players=${maxP}` });
   },
 
   /** 显示加入房间输入 */
