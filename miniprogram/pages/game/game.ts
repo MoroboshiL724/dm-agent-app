@@ -78,6 +78,7 @@ Page({
     gameWs.on("vote_result", (p) => this.onVoteResult(p));
     gameWs.on("game_over", (p) => this.onGameOver(p));
     gameWs.on("error", (p) => this.onServerError(p));
+    gameWs.on("private_message", (p) => this.onPrivateMessage(p));
     gameWs.on("disconnected", () => this.setData({ isConnected: false }));
     gameWs.on("reconnecting", (p) => {
       this.setData({ isReconnecting: true, connectionError: `重连中 (第${p.attempt}次)...` });
@@ -96,13 +97,17 @@ Page({
     const privateState = (payload.private_state || {}) as Record<string, unknown>;
     const anns = (payload.announcements || []) as string[];
 
+    const phaseName = (payload.to_phase as string) || this.data.phaseName;
+
     this.setData({
-      phaseName: (payload.to_phase as string) || this.data.phaseName,
+      phaseName,
       roundNumber: (publicState.round_number as number) || this.data.roundNumber,
       announcements: [...this.data.announcements, ...anns].slice(-20), // 最近20条
       myRole: (privateState.role as string) || this.data.myRole,
       myTeam: (privateState.team as string) || this.data.myTeam,
       teammates: (privateState.teammates as string[]) || [],
+      availableActions: (privateState.available_actions as ActionSchema[]) || [],
+      showVotePanel: false,
     });
 
     // 语音播报新公告
@@ -167,6 +172,17 @@ Page({
       })),
     };
     wx.redirectTo({ url: `/pages/result/result?game_id=${this.data.gameId}` });
+  },
+
+  onPrivateMessage(payload: Record<string, unknown>) {
+    const text = (payload.text as string) || "";
+    if (text) {
+      // 在公告区显示 AI 反馈
+      this.setData({
+        announcements: [...this.data.announcements, `🤖 ${text}`].slice(-20),
+      });
+      this.speak(text);
+    }
   },
 
   onServerError(payload: Record<string, unknown>) {
