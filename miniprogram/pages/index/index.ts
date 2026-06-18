@@ -15,9 +15,7 @@ Page({
 
   onShow() {
     // 每次进入首页刷新游戏列表
-    if (this.data.gameTypes.length === 0) {
-      this.loadGameTypes();
-    }
+    this.loadGameTypes();
   },
 
   async loadGameTypes() {
