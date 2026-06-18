@@ -13,11 +13,11 @@
  */
 
 const config = {
-  /** WebSocket 地址 (开发用 ws://, 生产用 wss://) */
-  serverUrl: "wss://your-server.com",
+  /** WebSocket 地址 */
+  serverUrl: "wss://gnixuhz.cn",
 
-  /** REST API 地址 (开发用 http://, 生产用 https://) */
-  apiUrl: "https://your-server.com/api/v1",
+  /** REST API 地址 */
+  apiUrl: "https://gnixuhz.cn/api/v1",
 };
 
 export default config;
