@@ -45,8 +45,10 @@ Page({
   /** 选择游戏 → 进入创建/加入页面 */
   onGameSelect(e: WechatMiniprogram.TouchEvent) {
     const gameId = e.currentTarget.dataset.gameId as string;
-    const minP = e.currentTarget.dataset.minPlayers as string || "4";
-    const maxP = e.currentTarget.dataset.maxPlayers as string || "12";
+    // 从已加载的游戏列表中查找人数配置
+    const game = this.data.gameTypes.find(g => g.game_id === gameId);
+    const minP = game?.min_players ?? 4;
+    const maxP = game?.max_players ?? 12;
     wx.navigateTo({ url: `/pages/lobby/lobby?game_type=${gameId}&min_players=${minP}&max_players=${maxP}` });
   },
 
