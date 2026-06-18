@@ -31,6 +31,7 @@ Page({
         gameTypes: [
           { game_id: "werewolf", name: "狼人杀", min_players: 4, max_players: 12, icon: "🐺" },
           { game_id: "avalon", name: "阿瓦隆", min_players: 5, max_players: 10, icon: "🗡️" },
+          { game_id: "testgame", name: "功能测试", min_players: 1, max_players: 1, icon: "🧪" },
         ],
       });
     }
