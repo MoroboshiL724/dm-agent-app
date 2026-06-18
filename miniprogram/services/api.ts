@@ -63,3 +63,12 @@ export function joinGame(gameId: string, playerName: string): Promise<{
 }> {
   return apiPost(`/games/${gameId}/join`, { player_name: playerName });
 }
+
+/** 通过房间号查询游戏信息 */
+export function fetchGameByRoom(roomCode: string): Promise<{
+  game_id: string; game_type: string; status: string;
+  players: Array<{ player_id: string; name: string; is_alive: boolean; is_connected: boolean }>;
+  room_code: string;
+}> {
+  return apiGet(`/games/by-room/${roomCode}`);
+}

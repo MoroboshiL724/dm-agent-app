@@ -2,7 +2,7 @@
  * 房间页面 — 创建/加入游戏，等待玩家就绪
  */
 
-import { createGame, joinGame, fetchGameInfo } from "../../services/api";
+import { createGame, joinGame, fetchGameInfo, fetchGameByRoom } from "../../services/api";
 import { gameWs } from "../../services/websocket";
 
 Page({
@@ -21,19 +21,19 @@ Page({
     canStart: false,
     minPlayers: 0,
     maxPlayers: 0,
+    joining: false,
   },
 
   onLoad(options: Record<string, string>) {
+    const mode = options.mode || "";
     const gameType = options.game_type || "";
-    const gameId = options.game_id || "";
     const roomCode = options.room_code || "";
 
-    if (gameId) {
-      // 创建房间后进入
-      this.setData({ mode: "create", gameId, roomCode, gameType, isHost: true });
-      this.startPolling();
+    if (mode === "join") {
+      // 通过房间号加入
+      this.setData({ mode: "join", roomCode });
     } else {
-      // 从首页选择游戏 → 需要创建
+      // 创建房间
       this.setData({ mode: "create", gameType });
       this.doCreateGame(gameType);
     }
@@ -70,27 +70,48 @@ Page({
     this.setData({ playerName: e.detail.value });
   },
 
+  onInputPlayerName(e: WechatMiniprogram.Input) {
+    this.setData({ playerName: e.detail.value });
+  },
+
   async doJoinGame() {
-    if (!this.data.roomCode || !this.data.playerName) {
+    const { roomCode, playerName } = this.data;
+    if (!roomCode || !playerName) {
       wx.showToast({ title: "请输入房间号和昵称", icon: "none" });
       return;
     }
+    if (this.data.joining) return;
+    this.setData({ joining: true });
+
     try {
+      wx.showLoading({ title: "查找房间..." });
+
+      // 1. 通过房间号查询 game_id
+      const info = await fetchGameByRoom(roomCode);
+      const gameId = info.game_id;
+
+      // 2. 加入游戏
       wx.showLoading({ title: "加入中..." });
-      // 先获取房间信息
-      const info = await fetchGameInfo(this.data.gameId || this.data.roomCode);
-      const res = await joinGame(info.game_id, this.data.playerName);
+      const res = await joinGame(gameId, playerName);
       wx.hideLoading();
+
       this.setData({
         gameId: res.game_id,
         myPlayerId: res.player_id,
         wsToken: res.ws_token,
         gameType: info.game_type,
+        joining: false,
       });
       this.goToGame();
     } catch (err) {
       wx.hideLoading();
-      wx.showToast({ title: "加入失败，请检查房间号", icon: "none" });
+      this.setData({ joining: false });
+      const msg = (err as Error).message || "";
+      if (msg.includes("404") || msg.includes("Room not found")) {
+        wx.showToast({ title: "房间不存在", icon: "none" });
+      } else {
+        wx.showToast({ title: "加入失败，请重试", icon: "none" });
+      }
     }
   },
 
@@ -147,9 +168,5 @@ Page({
       data: this.data.roomCode,
       success: () => wx.showToast({ title: "房间号已复制，分享给朋友" }),
     });
-  },
-
-  onInputPlayerName(e: WechatMiniprogram.Input) {
-    this.setData({ playerName: e.detail.value });
   },
 });
