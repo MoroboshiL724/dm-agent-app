@@ -1,56 +1,26 @@
 /**
- * 语音识别服务 — 使用微信同声传译插件进行实时语音转文字
+ * 语音识别服务 — 录音 → 上传后端 STT → 返回文字
  *
- * 注意：模拟器中插件可能不可用，需在真机上测试语音功能。
- * 模拟器中会提示使用文字输入。
+ * 个人主体小程序无法使用微信同声传译插件，改用自建后端 Whisper 识别。
  */
 
 type ASRCallback = (text: string, confidence: number) => void;
 
 class ASRService {
-  private recognitionManager: any = null;
+  private recorder: WechatMiniprogram.RecorderManager;
   private isRecording = false;
   private onResult: ASRCallback | null = null;
   private onError: ((err: string) => void) | null = null;
+  private sttUrl = "";
 
   constructor() {
-    this.initPlugin();
-  }
-
-  /** 初始化微信同声传译插件 */
-  private initPlugin() {
-    try {
-      const plugin = requirePlugin("WechatSI");
-      if (plugin && plugin.getRecordRecognitionManager) {
-        const manager = plugin.getRecordRecognitionManager();
-        this.recognitionManager = manager;
-
-        manager.onRecognize((res: { result: string }) => {
-          // 实时识别中（可展示部分结果）
-          console.log("[ASR] Partial:", res.result);
-        });
-
-        manager.onStop((res: { result: string }) => {
-          this.isRecording = false;
-          const text = (res.result || "").trim();
-          if (text) {
-            this.onResult?.(text, 1.0);
-          } else {
-            this.onError?.("未识别到语音内容，请重试");
-          }
-        });
-
-        manager.onError((err: { msg?: string; retcode?: number }) => {
-          this.isRecording = false;
-          console.error("[ASR] Error:", err);
-          this.onError?.("语音识别失败，请使用文字输入");
-        });
-
-        console.log("[ASR] WechatSI plugin ready");
-      }
-    } catch (e) {
-      console.warn("[ASR] WechatSI plugin not available:", e);
-    }
+    this.recorder = wx.getRecorderManager();
+    this.recorder.onStop((res) => this.onRecordStop(res));
+    this.recorder.onError((err) => {
+      this.isRecording = false;
+      console.error("[ASR] Recorder error:", err);
+      this.onError?.("录音失败，请重试");
+    });
   }
 
   setCallbacks(onResult: ASRCallback, onError: (err: string) => void) {
@@ -58,22 +28,65 @@ class ASRService {
     this.onError = onError;
   }
 
+  /** 设置 STT 接口地址 */
+  setSttUrl(apiUrl: string) {
+    this.sttUrl = apiUrl + "/voice/stt";
+  }
+
   start() {
     if (this.isRecording) return;
-    if (!this.recognitionManager) {
-      this.onError?.("语音识别暂不可用，请使用文字输入");
-      return;
-    }
     this.isRecording = true;
-    this.recognitionManager.start({
+    this.recorder.start({
       duration: 30000, // 最长 30 秒
-      lang: "zh_CN",
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 48000,
+      format: "mp3",
+      frameSize: 50,
     });
   }
 
   stop() {
     if (!this.isRecording) return;
-    this.recognitionManager.stop();
+    this.recorder.stop();
+  }
+
+  /** 录音结束 → 上传后端识别 */
+  private onRecordStop(res: WechatMiniprogram.RecorderManagerOnStopCallbackResult) {
+    this.isRecording = false;
+    const filePath = res.tempFilePath;
+
+    if (!filePath) {
+      this.onError?.("录音文件获取失败");
+      return;
+    }
+
+    wx.showLoading({ title: "识别中..." });
+
+    wx.uploadFile({
+      url: this.sttUrl,
+      filePath,
+      name: "file",
+      success: (uploadRes) => {
+        wx.hideLoading();
+        try {
+          const data = JSON.parse(uploadRes.data);
+          const text = (data.text || "").trim();
+          if (text) {
+            this.onResult?.(text, 1.0);
+          } else {
+            this.onError?.("未识别到语音内容，请重试");
+          }
+        } catch {
+          this.onError?.("语音识别解析失败");
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.error("[ASR] Upload failed:", err);
+        this.onError?.("网络错误，请检查网络后重试");
+      },
+    });
   }
 
   get recording(): boolean {

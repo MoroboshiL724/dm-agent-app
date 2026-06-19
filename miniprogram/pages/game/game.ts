@@ -5,6 +5,7 @@
 
 import { gameWs } from "../../services/websocket";
 import { asrService } from "../../services/asr";
+import { ttsService } from "../../services/tts";
 
 Page({
   data: {
@@ -53,6 +54,11 @@ Page({
     const action = options.action || "";
     this._shouldStart = action === "start";
     this.setData({ gameId, playerId });
+
+    // 初始化语音服务
+    const app = getApp<IAppOption>();
+    ttsService.setTtsUrl(app.globalData.apiUrl);
+
     this.connectGame(gameId, playerId, wsToken);
     this.setupASR();
   },
@@ -60,6 +66,7 @@ Page({
   onUnload() {
     gameWs.offAll();
     gameWs.disconnect();
+    ttsService.stopAll();
   },
 
   /* ═══════════ WebSocket ═══════════ */
@@ -203,14 +210,16 @@ Page({
 
   /* ═══════════ 语音播报 (TTS) ═══════════ */
 
-  speak(_text: string) {
-    // MVP: 使用微信内置 TTS 或者不读（玩家自己看屏幕）
-    // 后续接入 mimo-v2-tts 或 CosyVoice
+  speak(text: string) {
+    if (!text) return;
+    ttsService.speak(text);
   },
 
   /* ═══════════ 语音输入 ═══════════ */
 
   setupASR() {
+    const app = getApp<IAppOption>();
+    asrService.setSttUrl(app.globalData.apiUrl);
     asrService.setCallbacks(
       (text) => {
         // 语音识别成功 → 发送到服务器
