@@ -14,7 +14,7 @@ class TTSService {
   }
 
   /** 播放文字语音（自动排队，避免重叠） */
-  speak(text: string, voice: string = "zh-CN-XiaoxiaoNeural") {
+  speak(text: string, voice: string = "zh-cn") {
     if (!text || !text.trim()) return;
     if (!this.ttsUrl) {
       console.warn("[TTS] URL not configured");
@@ -38,7 +38,7 @@ class TTSService {
 
     this.isPlaying = true;
     const text = this.queue.shift()!;
-    const url = `${this.ttsUrl}?text=${encodeURIComponent(text)}&voice=zh-CN-XiaoxiaoNeural`;
+    const url = `${this.ttsUrl}?text=${encodeURIComponent(text)}&voice=zh-cn`;
 
     this.audio = wx.createInnerAudioContext();
     this.audio.src = url;
