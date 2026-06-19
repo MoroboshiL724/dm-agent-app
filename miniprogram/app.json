@@ -16,10 +16,4 @@
       "desc": "需要使用语音输入来与裁判交互"
     }
   },
-  "plugins": {
-    "WechatSI": {
-      "version": "0.3.6",
-      "provider": "wx069ba97219f66d99"
-    }
-  }
 }
